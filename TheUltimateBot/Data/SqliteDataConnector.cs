@@ -90,7 +90,7 @@ namespace TheUltimateBot.Data
         public void SetActive(DiscordMember member)
         {
             var cmd = connection.CreateCommand();
-            cmd.CommandText = "INSERT OR REPLACE INTO ACTIVE (USER, LASTACTIVE) VALUES (" + member.Id + ", " + GetUnixTimestamp() + ")";
+            cmd.CommandText = "INSERT INTO ACTIVE (USER, LASTACTIVE) VALUES (" + member.Id + ", " + GetUnixTimestamp() + ")";
             cmd.ExecuteNonQuery();
         }
 
@@ -139,6 +139,60 @@ namespace TheUltimateBot.Data
             }
 
             return result;
+        }
+
+        public int GetLastActivity(DiscordMember member)
+        {
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT LASTACTIVE FROM ACTIVE WHERE USER=" + member.Id;
+            var reader = cmd.ExecuteReader();
+
+            if (reader.HasRows)
+            {
+                reader.Read();
+                return reader.GetInt32(0);
+            }
+
+            return -1;
+        }
+
+        public void UpdateActivity(DiscordUser author)
+        {
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = "UPDATE ACTIVE SET LASTACTIVE=" + GetUnixTimestamp() + " WHERE USER=" + author.Id;
+            cmd.ExecuteNonQuery();
+        }
+
+        public bool IsInDatabase(DiscordUser member)
+        {
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT * FROM ACTIVE WHERE USER=" + member.Id;
+            bool result;
+            using (var reader = cmd.ExecuteReader())
+            {
+                result = reader.HasRows;
+            }
+            return result;
+        }
+
+        public bool IsInDatabase(DiscordMember member)
+        {
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT * FROM ACTIVE WHERE USER=" + member.Id;
+            bool result;
+            using (var reader = cmd.ExecuteReader())
+            {
+                result = reader.HasRows;
+            }
+            return result;
+        }
+
+        ~SqliteDataConnector()
+        {
+            if (connection.State != System.Data.ConnectionState.Closed)
+            {
+                connection.Close();
+            }
         }
     }
 }

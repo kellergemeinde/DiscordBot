@@ -11,6 +11,7 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using System.Net.Http;
 using Newtonsoft.Json.Linq;
+using TheUltimateBot.Data;
 
 namespace TheUltimateBot
 {
@@ -28,7 +29,7 @@ namespace TheUltimateBot
         {
             discord = new DiscordClient(new DiscordConfiguration
             {
-                Token = "API-Secret",
+                Token = "MzU3OTY3Njc2ODU4OTU3ODM2.DJxn1g.dDD9xW7JIQ0g_Sols0Klx6bZSOY",
                 TokenType = TokenType.Bot
             });
             var commandConfig = new CommandsNextConfiguration();
@@ -107,6 +108,15 @@ namespace TheUltimateBot
                     await messageCreateEventArgs.Message.RespondAsync(thumb);
                     await messageCreateEventArgs.Message.RespondAsync(link + "\nComment: *" + comment + "*");
                     await messageCreateEventArgs.Message.DeleteAsync();
+                }
+            };
+
+            discord.MessageCreated += async (messageCreateEventArgs) =>
+            {
+                var data = new SqliteDataConnector(messageCreateEventArgs.Guild);
+                if (data.IsInDatabase(messageCreateEventArgs.Author))
+                {
+                    data.UpdateActivity(messageCreateEventArgs.Author);
                 }
             };
 

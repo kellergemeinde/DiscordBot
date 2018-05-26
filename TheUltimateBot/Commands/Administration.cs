@@ -40,5 +40,15 @@ namespace TheUltimateBot.Commands
             await ctx.Channel.SendMessageAsync("Following members set as active:");
             await ctx.Channel.SendMessageAsync(string.Join('\n', result.Select(x => x.DisplayName)));
         }
+
+        [Command("checkactive")]
+        public async Task CheckActive(CommandContext ctx)
+        {
+            var data = new SqliteDataConnector(ctx.Guild);
+
+            var active = data.GetActive();
+
+            await ctx.Message.Channel.SendMessageAsync(string.Join('\n', active.Select(x => x.Username + ", last activity " + data.GetLastActivity(x))));
+        }
     }
 }
