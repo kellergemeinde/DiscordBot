@@ -43,11 +43,11 @@ namespace TheUltimateBot.Data
             if (needToCreateTables)
             {
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = "CREATE TABLE ACTIVE(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT NOT NULL, LASTACTIVE INT NOT NULL)";
+                cmd.CommandText = "CREATE TABLE ACTIVE(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT UNIQUE NOT NULL, LASTACTIVE INT NOT NULL, ALWAYSACTIVE INT DEFAULT 0)";
                 cmd.ExecuteNonQuery();
 
                 cmd = connection.CreateCommand();
-                cmd.CommandText = "CREATE TABLE INACTIVE(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT NOT NULL)";
+                cmd.CommandText = "CREATE TABLE INACTIVE(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT UNIQUE NOT NULL)";
                 cmd.ExecuteNonQuery();
             }
 
@@ -99,19 +99,23 @@ namespace TheUltimateBot.Data
             var cmd = connection.CreateCommand();
             cmd.CommandText = "SELECT * FROM ACTIVE WHERE USER=" + member.Id;
             var result = cmd.ExecuteReader();
+            bool wasActive = true;
 
             if (!result.HasRows)
             {
-                throw new KeyNotFoundException(member.Mention + " was not found in active users.");
+                wasActive = false;
             }
 
             cmd = connection.CreateCommand();
-            cmd.CommandText = "INSERT OR REPLACE INTO ACTIVE (USER, LASTACTIVE) VALUES (" + member.Id + ", " + GetUnixTimestamp() + ")";
+            cmd.CommandText = "INSERT OR REPLACE INTO INACTIVE (USER, LASTACTIVE) VALUES (" + member.Id + ", " + GetUnixTimestamp() + ")";
             cmd.ExecuteNonQuery();
 
-            cmd = connection.CreateCommand();
-            cmd.CommandText = "DELETE FROM ACTIVE WHERE USER=" + member.Id;
-            cmd.ExecuteNonQuery();
+            if (wasActive)
+            {
+                cmd = connection.CreateCommand();
+                cmd.CommandText = "DELETE FROM ACTIVE WHERE USER=" + member.Id;
+                cmd.ExecuteNonQuery();
+            }
         }
 
         public void Remove(DiscordMember member)
@@ -185,6 +189,39 @@ namespace TheUltimateBot.Data
                 result = reader.HasRows;
             }
             return result;
+        }
+
+        public void ResetDatabase()
+        {
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = "DROP TABLE ACTIVE";
+            cmd.ExecuteNonQuery();
+
+            cmd = connection.CreateCommand();
+            cmd.CommandText = "DROP TABLE INACTIVE";
+            cmd.ExecuteNonQuery();
+
+            cmd = connection.CreateCommand();
+            cmd.CommandText = "CREATE TABLE ACTIVE(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT UNIQUE NOT NULL, LASTACTIVE INT NOT NULL, ALWAYSACTIVE INT DEFAULT 0)";
+            cmd.ExecuteNonQuery();
+
+            cmd = connection.CreateCommand();
+            cmd.CommandText = "CREATE TABLE INACTIVE(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT UNIQUE NOT NULL)";
+            cmd.ExecuteNonQuery();
+        }
+
+        public void SetAlwaysActive(DiscordUser user, bool flag)
+        {
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = "UPDATE ACTIVE SET ALWAYSACTIVE=" + (flag ? 1 : 0) + " WHERE USER=" + user.Id;
+            cmd.ExecuteNonQuery();
+        }
+
+        public void SetAlwaysActive(DiscordMember user, bool flag)
+        {
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = "UPDATE ACTIVE SET ALWAYSACTIVE=" + (flag ? 1 : 0) + " WHERE USER=" + user.Id;
+            cmd.ExecuteNonQuery();
         }
 
         ~SqliteDataConnector()
