@@ -9,7 +9,7 @@ using Microsoft.Data.Sqlite;
 
 namespace TheUltimateBot.Data
 {
-    public class SqliteDataConnector : IDataConnector
+    public class SqliteDataConnector : IDataConnector, IDisposable
     {
         public SqliteConnection connection;
         public DiscordGuild server { get; set; }
@@ -64,7 +64,20 @@ namespace TheUltimateBot.Data
             {
                 while (reader.Read())
                 {
-                    members.Add(server.GetMemberAsync((ulong)(reader.GetInt64(1))).Result);
+                    var id = (ulong)(reader.GetInt64(1));
+                    DiscordMember member;
+                    try
+                    {
+                        member = server.GetMemberAsync(id).GetAwaiter().GetResult();
+                        members.Add(member);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex.InnerException is DSharpPlus.Exceptions.NotFoundException)
+                        {
+                            Remove(id);
+                        }
+                    }
                 }
             }
             return members;
@@ -120,12 +133,17 @@ namespace TheUltimateBot.Data
 
         public void Remove(DiscordMember member)
         {
+            Remove(member.Id);
+        }
+
+        public void Remove(ulong id)
+        {
             var cmd = connection.CreateCommand();
-            cmd.CommandText = "DELETE FROM ACTIVE WHERE USER=" + member.Id;
+            cmd.CommandText = "DELETE FROM ACTIVE WHERE USER=" + id;
             cmd.ExecuteNonQuery();
 
             cmd = connection.CreateCommand();
-            cmd.CommandText = "DELETE FROM INACTIVE WHERE USER=" + member.Id;
+            cmd.CommandText = "DELETE FROM INACTIVE WHERE USER=" + id;
             cmd.ExecuteNonQuery();
         }
 
@@ -224,11 +242,15 @@ namespace TheUltimateBot.Data
             cmd.ExecuteNonQuery();
         }
 
-        ~SqliteDataConnector()
+        public void Dispose()
         {
-            if (connection.State != System.Data.ConnectionState.Closed)
+            if (connection != null)
             {
-                connection.Close();
+                if (connection.State != System.Data.ConnectionState.Closed)
+                {
+                    connection.Close();
+                    connection.Dispose();
+                }
             }
         }
     }

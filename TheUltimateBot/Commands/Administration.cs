@@ -17,59 +17,69 @@ namespace TheUltimateBot.Commands
         [Command("pingactive")]
         public async Task PingActive(CommandContext ctx, string message)
         {
-            var data = new SqliteDataConnector(ctx.Guild);
-            foreach (var member in data.GetActive())
+            using (var data = new SqliteDataConnector(ctx.Guild))
             {
-                await member.SendMessageAsync(message);
+                foreach (var member in data.GetActive())
+                {
+                    await member.SendMessageAsync(message);
+                }
             }
         }
 
         [Command("pinginactive")]
         public async Task PingInactive(CommandContext ctx, string message)
         {
-            var data = new SqliteDataConnector(ctx.Guild);
-            foreach (var member in data.GetInactive())
+            using (var data = new SqliteDataConnector(ctx.Guild))
             {
-                await member.SendMessageAsync(message);
+                foreach (var member in data.GetInactive())
+                {
+                    await member.SendMessageAsync(message);
+                }
             }
         }
 
         [Command("reset")]
         public async Task Reset(CommandContext ctx)
         {
-            var data = new SqliteDataConnector(ctx.Guild);
-            data.ResetDatabase();
+            using (var data = new SqliteDataConnector(ctx.Guild))
+            {
+                data.ResetDatabase();
 
-            await ctx.Channel.SendMessageAsync("Reset complete.");
+                await ctx.Channel.SendMessageAsync("Reset complete.");
+            }
         }
 
         [Command("reset")]
         public async Task Reset(CommandContext ctx, string roleName)
         {
             var role = ctx.Guild.Roles.FirstOrDefault(x => x.Name.ToLower() == roleName.ToLower());
-            var data = new SqliteDataConnector(ctx.Guild);
-            data.ResetDatabase();
+            using (var data = new SqliteDataConnector(ctx.Guild))
+            {
+                data.ResetDatabase();
 
-            var result = data.AddRoleAsActive(ctx.Guild, role);
+                var result = data.AddRoleAsActive(ctx.Guild, role);
 
-            await ctx.Channel.SendMessageAsync("Reset complete.");
-            await ctx.Channel.SendMessageAsync("Following members set as active:");
-            await ctx.Channel.SendMessageAsync(string.Join('\n', result.Select(x => x.DisplayName)));
+                await ctx.Channel.SendMessageAsync("Reset complete.");
+                await ctx.Channel.SendMessageAsync("Following members set as active:");
+                await ctx.Channel.SendMessageAsync(string.Join('\n', result.Select(x => x.DisplayName)));
+            }
         }
 
         [Command("setactive")]
         public async Task SetActive(CommandContext ctx, string mention)
         {
             var user = ctx.Guild.Members.First(x => x.Mention.Equals(mention));
-            var data = new SqliteDataConnector(ctx.Guild);
-            if (!data.IsInDatabase(user))
+            using (var data = new SqliteDataConnector(ctx.Guild))
             {
-                data.SetActive(user);
-                await ctx.Message.Channel.SendMessageAsync(user.Mention + " added to active members");
-            }
-            else
-            {
-                await ctx.Message.Channel.SendMessageAsync(user.DisplayName + " is already an active member");
+                if (!data.IsInDatabase(user))
+                {
+                    data.SetActive(user);
+                    await ctx.Message.Channel.SendMessageAsync(user.Mention + " added to active members");
+                }
+                else
+                {
+                    await ctx.Message.Channel.SendMessageAsync(user.DisplayName + " is already an active member");
+                }
             }
         }
 
@@ -77,33 +87,38 @@ namespace TheUltimateBot.Commands
         public async Task SetInactive(CommandContext ctx, string mention)
         {
             var user = ctx.Guild.Members.First(x => x.Mention.Equals(mention));
-            var data = new SqliteDataConnector(ctx.Guild);
-            data.SetInactive(user);
-            await ctx.Message.Channel.SendMessageAsync(user.DisplayName + " is not an active member anymore");
+            using (var data = new SqliteDataConnector(ctx.Guild))
+            {
+                data.SetInactive(user);
+                await ctx.Message.Channel.SendMessageAsync(user.DisplayName + " is not an active member anymore");
+            }
         }
 
         [Command("setalwaysactive")]
         public async Task SetAlwaysActive(CommandContext ctx, string mention)
         {
             var user = ctx.Guild.Members.First(x => x.Mention.Equals(mention));
-            var data = new SqliteDataConnector(ctx.Guild);
-            if (!data.IsInDatabase(user))
+            using (var data = new SqliteDataConnector(ctx.Guild))
             {
-                data.SetActive(user);
-                await ctx.Message.Channel.SendMessageAsync(user.Mention + " added to active members");
-            }
+                if (!data.IsInDatabase(user))
+                {
+                    data.SetActive(user);
+                    await ctx.Message.Channel.SendMessageAsync(user.Mention + " added to active members");
+                }
 
-            data.SetAlwaysActive(user, true);
+                data.SetAlwaysActive(user, true);
+            }
         }
 
         [Command("checkactive")]
         public async Task CheckActive(CommandContext ctx)
         {
-            var data = new SqliteDataConnector(ctx.Guild);
+            using (var data = new SqliteDataConnector(ctx.Guild))
+            {
+                var active = data.GetActive();
 
-            var active = data.GetActive();
-
-            await ctx.Message.Channel.SendMessageAsync(string.Join('\n', active.Select(x => x.Username + ", last activity " + data.GetLastActivity(x))));
+                await ctx.Message.Channel.SendMessageAsync(string.Join('\n', active.Select(x => x.Username + ", last activity " + data.GetLastActivity(x))));
+            }
         }
 
         [Command("text2img")]
