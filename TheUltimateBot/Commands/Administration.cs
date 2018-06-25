@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
@@ -32,6 +33,27 @@ namespace TheUltimateBot.Commands
             using (var data = new SqliteDataConnector(ctx.Guild))
             {
                 foreach (var member in data.GetInactive())
+                {
+                    await member.SendMessageAsync(message);
+                }
+            }
+        }
+
+        [Command("pingall")]
+        public async Task PingAll(CommandContext ctx, string message)
+        {
+            foreach (var member in ctx.Guild.Members)
+            {
+                await member.SendMessageAsync(message);
+            }
+        }
+
+        [Command("pingall")]
+        public async Task PingAll(CommandContext ctx, string message, string group)
+        {
+            foreach (var member in ctx.Guild.Members)
+            {
+                if (member.Roles.Select(x => x.Name.ToLower()).Contains(group.ToLower()))
                 {
                     await member.SendMessageAsync(message);
                 }
@@ -97,7 +119,7 @@ namespace TheUltimateBot.Commands
         [Command("setalwaysactive")]
         public async Task SetAlwaysActive(CommandContext ctx, string mention)
         {
-            var user = ctx.Guild.Members.First(x => x.Mention.Equals(mention));
+            var user = ctx.Guild.Members.First(x => mention.Contains(x.Id.ToString()));
             using (var data = new SqliteDataConnector(ctx.Guild))
             {
                 if (!data.IsInDatabase(user))
@@ -117,8 +139,16 @@ namespace TheUltimateBot.Commands
             {
                 var active = data.GetActive();
 
-                await ctx.Message.Channel.SendMessageAsync(string.Join('\n', active.Select(x => x.Username + ", last activity " + data.GetLastActivity(x))));
+                await ctx.Message.Channel.SendMessageAsync(string.Join('\n', active.Select(x => x.Username + ", last activity " + ((data.GetLastActivity(x) > 0) ? FromUnixTimeStamp(data.GetLastActivity(x)).ToShortDateString() : " ALWAYSACTIVE"))));
             }
+        }
+
+        public DateTime FromUnixTimeStamp(int unixTimeStamp)
+        {
+            // Unix timestamp is seconds past epoch
+            System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+            dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
+            return dtDateTime;
         }
 
         [Command("text2img")]
@@ -131,7 +161,19 @@ namespace TheUltimateBot.Commands
                FontStyle.Regular,
                GraphicsUnit.Point);
 
-            var test = Drawing.DrawText(text + "\nnewlineTest", font, Color.Black, Color.White);
+            var test = Drawing.DrawText(text, font, Color.Black, Color.White);
+            using (var ms = new MemoryStream())
+            {
+                test.Save(ms, ImageFormat.Png);
+                ms.Position = 0;
+                await ctx.Channel.SendFileAsync(ms, "TEST.png");
+            }
+        }
+
+        [Command("ActiveImg")]
+        public async Task ActiveMembersAsImage(CommandContext ctx)
+        {
+            var test = Drawing.DrawActiveMemberStructure(ctx.Guild);
             using (var ms = new MemoryStream())
             {
                 test.Save(ms, ImageFormat.Png);

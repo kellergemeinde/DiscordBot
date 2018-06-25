@@ -42,17 +42,26 @@ namespace TheUltimateBot.Data
 
             if (needToCreateTables)
             {
-                var cmd = connection.CreateCommand();
-                cmd.CommandText = "CREATE TABLE ACTIVE(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT UNIQUE NOT NULL, LASTACTIVE INT NOT NULL, ALWAYSACTIVE INT DEFAULT 0)";
-                cmd.ExecuteNonQuery();
-
-                cmd = connection.CreateCommand();
-                cmd.CommandText = "CREATE TABLE INACTIVE(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT UNIQUE NOT NULL)";
-                cmd.ExecuteNonQuery();
+                CreateTables();
             }
 
             this.connection = connection;
             this.server = server;
+        }
+
+        private void CreateTables()
+        {
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = "CREATE TABLE ACTIVE(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT UNIQUE NOT NULL, LASTACTIVE INT NOT NULL, ALWAYSACTIVE INT DEFAULT 0)";
+            cmd.ExecuteNonQuery();
+
+            cmd = connection.CreateCommand();
+            cmd.CommandText = "CREATE TABLE INACTIVE(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT UNIQUE NOT NULL)";
+            cmd.ExecuteNonQuery();
+
+            cmd = connection.CreateCommand();
+            cmd.CommandText = "CREATE TABLE CONFIG(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT UNIQUE NOT NULL)";
+            cmd.ExecuteNonQuery();
         }
 
         public List<DiscordMember> GetActive()
@@ -166,13 +175,18 @@ namespace TheUltimateBot.Data
         public int GetLastActivity(DiscordMember member)
         {
             var cmd = connection.CreateCommand();
-            cmd.CommandText = "SELECT LASTACTIVE FROM ACTIVE WHERE USER=" + member.Id;
+            cmd.CommandText = "SELECT LASTACTIVE, ALWAYSACTIVE FROM ACTIVE WHERE USER=" + member.Id;
             var reader = cmd.ExecuteReader();
 
             if (reader.HasRows)
             {
                 reader.Read();
-                return reader.GetInt32(0);
+                int timeStamp = reader.GetInt32(0);
+                bool isAlwaysActive = reader.GetInt32(1) == 1;
+                if (!isAlwaysActive)
+                {
+                    return timeStamp;
+                }
             }
 
             return -1;
@@ -185,22 +199,14 @@ namespace TheUltimateBot.Data
             cmd.ExecuteNonQuery();
         }
 
-        public bool IsInDatabase(DiscordUser member)
-        {
-            var cmd = connection.CreateCommand();
-            cmd.CommandText = "SELECT * FROM ACTIVE WHERE USER=" + member.Id;
-            bool result;
-            using (var reader = cmd.ExecuteReader())
-            {
-                result = reader.HasRows;
-            }
-            return result;
-        }
+        public bool IsInDatabase(DiscordUser member) => IsInDatabase(member.Id);
 
-        public bool IsInDatabase(DiscordMember member)
+        public bool IsInDatabase(DiscordMember member) => IsInDatabase(member.Id);
+
+        public bool IsInDatabase(ulong id)
         {
             var cmd = connection.CreateCommand();
-            cmd.CommandText = "SELECT * FROM ACTIVE WHERE USER=" + member.Id;
+            cmd.CommandText = "SELECT Id FROM ACTIVE WHERE USER=" + id;
             bool result;
             using (var reader = cmd.ExecuteReader())
             {
@@ -220,12 +226,10 @@ namespace TheUltimateBot.Data
             cmd.ExecuteNonQuery();
 
             cmd = connection.CreateCommand();
-            cmd.CommandText = "CREATE TABLE ACTIVE(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT UNIQUE NOT NULL, LASTACTIVE INT NOT NULL, ALWAYSACTIVE INT DEFAULT 0)";
+            cmd.CommandText = "DROP TABLE CONFIG";
             cmd.ExecuteNonQuery();
 
-            cmd = connection.CreateCommand();
-            cmd.CommandText = "CREATE TABLE INACTIVE(ID INTEGER PRIMARY KEY AUTOINCREMENT, USER INT UNIQUE NOT NULL)";
-            cmd.ExecuteNonQuery();
+            CreateTables();
         }
 
         public void SetAlwaysActive(DiscordUser user, bool flag)
