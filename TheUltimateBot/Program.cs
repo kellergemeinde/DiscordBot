@@ -29,7 +29,7 @@ namespace TheUltimateBot
         {
             discord = new DiscordClient(new DiscordConfiguration
             {
-                Token = "MzU3OTY3Njc2ODU4OTU3ODM2.DJxn1g.dDD9xW7JIQ0g_Sols0Klx6bZSOY",
+                Token = "SUPERSECRET",
                 TokenType = TokenType.Bot
             });
             var commandConfig = new CommandsNextConfiguration();
