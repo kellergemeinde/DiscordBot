@@ -19,8 +19,8 @@ namespace TheUltimateBot
     {
         public static DiscordClient discord;
         public static CommandsNextExtension commands;
-        private static object fileLock = new object();
-        private static string logFile = "discordBot.log";
+        public static object fileLock = new object();
+        public static string logFile = "discordBot.log";
 
         private static void Main(string[] args)
         {
@@ -46,7 +46,14 @@ namespace TheUltimateBot
                     {
                         using (StreamWriter sw = new StreamWriter(logFile, true))
                         {
-                            sw.WriteLine("[" + DateTime.UtcNow.ToShortTimeString() + "]" + "[MSG]" + messageCreateEventArgs.Message.Content);
+                            if (messageCreateEventArgs.Message.Content.StartsWith("!!"))
+                            {
+                                sw.WriteLine("[" + DateTime.UtcNow.ToShortTimeString() + "]" + "[CMD]" + "(" + messageCreateEventArgs.Author.Mention + " aka " + messageCreateEventArgs.Author.Username + ")" + messageCreateEventArgs.Message.Content);
+                            }
+                            else
+                            {
+                                sw.WriteLine("[" + DateTime.UtcNow.ToShortTimeString() + "]" + "[MSG]" + "(" + messageCreateEventArgs.Author.Mention + " aka " + messageCreateEventArgs.Author.Username + ")" + messageCreateEventArgs.Message.Content);
+                            }
                         }
                     }
                 }

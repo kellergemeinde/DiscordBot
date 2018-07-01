@@ -7,6 +7,7 @@ using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using TheUltimateBot.Data;
 using TheUltimateBot.Imaging;
@@ -15,6 +16,36 @@ namespace TheUltimateBot.Commands
 {
     public class Administration : BaseCommandModule
     {
+        [Command("getlog")]
+        public async Task GetLogFile(CommandContext ctx)
+        {
+            FileStream file = null;
+            try
+            {
+                if (File.Exists(Program.logFile))
+                {
+                    lock (Program.fileLock)
+                    {
+                        file = File.OpenRead(Program.logFile);
+                    }
+                    await ctx.Message.RespondWithFileAsync(file, "DirectMessages" + DateTime.UtcNow.ToShortTimeString() + ".log");
+                }
+                else
+                {
+                    await ctx.Message.RespondAsync("No logfile found");
+                }
+            }
+            catch (Exception ex)
+            {
+                await ctx.Message.RespondAsync(ex.Message);
+            }
+            finally
+            {
+                file?.Close();
+            }
+        }
+
+
         [Command("pingactive")]
         public async Task PingActive(CommandContext ctx, string message)
         {
