@@ -19,6 +19,8 @@ namespace TheUltimateBot
     {
         public static DiscordClient discord;
         public static CommandsNextExtension commands;
+        private static object fileLock = new object();
+        private static string logFile = "discordBot.log";
 
         private static void Main(string[] args)
         {
@@ -35,6 +37,21 @@ namespace TheUltimateBot
             var commandConfig = new CommandsNextConfiguration();
             commandConfig.StringPrefixes = new List<string>() { "!!" };
             commands = discord.UseCommandsNext(commandConfig);
+
+            discord.MessageCreated += (messageCreateEventArgs) =>
+            {
+                if (messageCreateEventArgs.Guild == null)
+                {
+                    lock (fileLock)
+                    {
+                        using (StreamWriter sw = new StreamWriter(logFile, true))
+                        {
+                            sw.WriteLine("[" + DateTime.UtcNow.ToShortTimeString() + "]" + "[MSG]" + messageCreateEventArgs.Message.Content);
+                        }
+                    }
+                }
+                return null;
+            };
 
             discord.MessageCreated += (messageCreateEventArgs) =>
             {
@@ -113,10 +130,17 @@ namespace TheUltimateBot
 
             discord.MessageCreated += async (messageCreateEventArgs) =>
             {
-                var data = new SqliteDataConnector(messageCreateEventArgs.Guild);
-                if (data.IsInDatabase(messageCreateEventArgs.Author))
+                try
                 {
-                    data.UpdateActivity(messageCreateEventArgs.Author);
+                    var data = new SqliteDataConnector(messageCreateEventArgs.Guild);
+                    if (data.IsInDatabase(messageCreateEventArgs.Author))
+                    {
+                        data.UpdateActivity(messageCreateEventArgs.Author);
+                    }
+                }
+                catch (Exception)
+                {
+
                 }
             };
 

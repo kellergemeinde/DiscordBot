@@ -67,7 +67,7 @@ namespace TheUltimateBot.Commands
             {
                 data.ResetDatabase();
 
-                await ctx.Channel.SendMessageAsync("Reset complete.");
+                await ctx.Message.RespondAsync("Reset complete.");
             }
         }
 
@@ -96,11 +96,11 @@ namespace TheUltimateBot.Commands
                 if (!data.IsInDatabase(user))
                 {
                     data.SetActive(user);
-                    await ctx.Message.Channel.SendMessageAsync(user.Mention + " added to active members");
+                    await ctx.Message.RespondAsync(user.Mention + " added to active members");
                 }
                 else
                 {
-                    await ctx.Message.Channel.SendMessageAsync(user.DisplayName + " is already an active member");
+                    await ctx.Message.RespondAsync(user.DisplayName + " is already an active member");
                 }
             }
         }
@@ -112,7 +112,7 @@ namespace TheUltimateBot.Commands
             using (var data = new SqliteDataConnector(ctx.Guild))
             {
                 data.SetInactive(user);
-                await ctx.Message.Channel.SendMessageAsync(user.DisplayName + " is not an active member anymore");
+                await ctx.Message.RespondAsync(user.DisplayName + " is not an active member anymore");
             }
         }
 
@@ -125,7 +125,7 @@ namespace TheUltimateBot.Commands
                 if (!data.IsInDatabase(user))
                 {
                     data.SetActive(user);
-                    await ctx.Message.Channel.SendMessageAsync(user.Mention + " added to active members");
+                    await ctx.Message.RespondAsync(user.Mention + " added to active members");
                 }
 
                 data.SetAlwaysActive(user, true);
@@ -139,7 +139,7 @@ namespace TheUltimateBot.Commands
             {
                 var active = data.GetActive();
 
-                await ctx.Message.Channel.SendMessageAsync(string.Join('\n', active.Select(x => x.Username + ", last activity " + ((data.GetLastActivity(x) > 0) ? FromUnixTimeStamp(data.GetLastActivity(x)).ToShortDateString() : " ALWAYSACTIVE"))));
+                await ctx.Message.RespondAsync(string.Join('\n', active.Select(x => x.Username + ", last activity " + ((data.GetLastActivity(x) > 0) ? FromUnixTimeStamp(data.GetLastActivity(x)).ToShortDateString() : " ALWAYSACTIVE"))));
             }
         }
 
@@ -166,7 +166,7 @@ namespace TheUltimateBot.Commands
             {
                 test.Save(ms, ImageFormat.Png);
                 ms.Position = 0;
-                await ctx.Channel.SendFileAsync(ms, "TEST.png");
+                await ctx.Message.RespondWithFileAsync(ms, "TEST.png");
             }
         }
 
@@ -178,7 +178,7 @@ namespace TheUltimateBot.Commands
             {
                 test.Save(ms, ImageFormat.Png);
                 ms.Position = 0;
-                await ctx.Channel.SendFileAsync(ms, "TEST.png");
+                await ctx.Message.RespondWithFileAsync(ms, "TEST.png");
             }
         }
     }
