@@ -76,6 +76,7 @@ namespace TheUltimateBot.Commands
             foreach (var member in ctx.Guild.Members)
             {
                 await member.SendMessageAsync(message);
+                Thread.Sleep(1000);
             }
         }
 
@@ -87,6 +88,7 @@ namespace TheUltimateBot.Commands
                 if (member.Roles.Select(x => x.Name.ToLower()).Contains(group.ToLower()))
                 {
                     await member.SendMessageAsync(message);
+                    Thread.Sleep(1000);
                 }
             }
         }
