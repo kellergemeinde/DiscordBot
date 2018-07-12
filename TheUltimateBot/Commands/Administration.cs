@@ -16,6 +16,13 @@ namespace TheUltimateBot.Commands
 {
     public class Administration : BaseCommandModule
     {
+        [Command("reset")]
+        public async Task ResetAndUpdate(CommandContext ctx)
+        {
+            await ctx.Message.RespondAsync("Restarting bot now");
+           Environment.Exit(1);
+        }
+
         [Command("getlog")]
         public async Task GetLogFile(CommandContext ctx)
         {
