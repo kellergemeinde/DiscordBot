@@ -40,7 +40,7 @@ namespace TheUltimateBot
 
             discord.MessageCreated += (messageCreateEventArgs) =>
             {
-                if (messageCreateEventArgs.Guild == null)
+                if (messageCreateEventArgs.Guild == null && !messageCreateEventArgs.Author.IsBot)
                 {
                     lock (fileLock)
                     {
